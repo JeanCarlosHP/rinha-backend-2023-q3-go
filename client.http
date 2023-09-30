@@ -1,0 +1,25 @@
+@hostname = localhost
+@port = 9999
+@host = http://{{hostname}}:{{port}}
+
+POST {{host}}/pessoas
+Content-Type: application/json
+
+{
+  "apelido" : "ana2",
+  "nome" : "awdawd",
+  "nascimento" : "2000-10-01",
+  "stack" : null
+}
+
+###
+
+GET {{host}}/pessoas/85ae9353-43a2-485e-bf07-c315aca49e5
+
+###
+
+GET {{host}}/pessoas?t=null
+
+###
+
+GET {{host}}/contagem-pessoas

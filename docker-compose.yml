@@ -1,0 +1,111 @@
+version: '3.5'
+services:
+  api1: # API - Instância 01
+    image: localhost:5000/jean/rinha-backend:latest
+    hostname: api1
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    expose:
+      - "80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.1GB'
+    networks:
+      - rinha
+
+  api2: # API - Instância 01
+    image: localhost:5000/jean/rinha-backend:latest
+    hostname: api2
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    expose:
+      - "80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.1GB'
+    networks:
+      - rinha
+
+  nginx: # Load Balancer
+    image: nginx:latest
+    volumes:
+      - ./data/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    ports:
+      - "9999:9999"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: '0.1GB'
+    networks:
+      - rinha
+
+  db: # Banco de dados
+    image: postgres
+    container_name: db_container
+    restart: always
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ./data/postgresql.conf:/var/lib/postgresql/data/pgdata/postgresql.conf
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rinha
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '2GB'
+    networks:
+      - rinha
+
+  cache:
+    image: redis:latest
+    container_name: cache_container
+    restart: always
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    volumes:
+      - ./data/cache/redis.conf:/etc/redis/
+      - cache:/etc/redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: '0.7GB'
+    networks:
+      - rinha
+
+volumes:
+  postgres:
+  cache:
+
+networks:
+  rinha:
+    driver: bridge
