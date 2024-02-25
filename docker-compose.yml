@@ -2,110 +2,100 @@ version: '3.5'
 services:
   api1: # API - Instância 01
     image: localhost:5000/jean/rinha-backend:latest
+    container_name: api1
     hostname: api1
     env_file:
-      - .env
+      - .env.prod
+    environment:
+      - PORT=8080
     depends_on:
-      db:
-        condition: service_healthy
-      cache:
+      postgres:
         condition: service_healthy
     expose:
-      - "80"
+      - 8080
+    network_mode: host
     deploy:
       resources:
         limits:
-          cpus: '0.1'
-          memory: '0.1GB'
-    networks:
-      - rinha
+          cpus: '0.12'
+          memory: '0.5GB'
 
-  api2: # API - Instância 01
+  api2: # API - Instância 02
     image: localhost:5000/jean/rinha-backend:latest
+    container_name: api2
     hostname: api2
     env_file:
-      - .env
+      - .env.prod
+    environment:
+      - PORT=8081
     depends_on:
-      db:
-        condition: service_healthy
-      cache:
+      postgres:
         condition: service_healthy
     expose:
-      - "80"
+      - 8081
+    network_mode: host
     deploy:
       resources:
         limits:
-          cpus: '0.1'
-          memory: '0.1GB'
-    networks:
-      - rinha
+          cpus: '0.12'
+          memory: '0.5GB'
 
   nginx: # Load Balancer
     image: nginx:latest
+    container_name: nginx
+    command: ["nginx", "-g", "daemon off;"]
     volumes:
       - ./data/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - api1
       - api2
     ports:
-      - "9999:9999"
+      - 9999:9999
+    network_mode: host
     deploy:
       resources:
         limits:
-          cpus: '0.1'
-          memory: '0.1GB'
-    networks:
-      - rinha
+          cpus: '0.16'
+          memory: '0.5GB'
 
-  db: # Banco de dados
-    image: postgres
-    container_name: db_container
+  postgres: # Banco de dados
+    image: docker.io/postgres
+    container_name: postgres
     restart: always
-    volumes:
-      - postgres:/var/lib/postgresql/data
-      - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql
-      # - ./data/postgresql.conf:/var/lib/postgresql/data/pgdata/postgresql.conf
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: rinha
-      PGDATA: /var/lib/postgresql/data/pgdata
+    command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
+    volumes:
+      - ./data/postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
+      - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 5432:5432
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+    network_mode: host
     deploy:
       resources:
         limits:
           cpus: '1'
-          memory: '2GB'
-    networks:
-      - rinha
+          memory: '1GB'
 
   cache:
     image: redis:latest
-    container_name: cache_container
-    restart: always
+    container_name: cache
     ports:
-      - '6379:6379'
-    healthcheck:
-      test: ["CMD", "redis-cli","ping"]
+      - "6379:6379"
     command: ["redis-server", "/etc/redis/redis.conf"]
     volumes:
-      - ./data/cache/redis.conf:/etc/redis/
-      - cache:/etc/redis
+      - ./data/redis.conf:/etc/redis/redis.conf
+    network_mode: host
     deploy:
       resources:
         limits:
-          cpus: '0.2'
-          memory: '0.7GB'
-    networks:
-      - rinha
-
-volumes:
-  postgres:
-  cache:
-
-networks:
-  rinha:
-    driver: bridge
+          cpus: "0.1"
+          memory: "0.5GB"

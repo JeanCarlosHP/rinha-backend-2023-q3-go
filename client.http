@@ -1,24 +1,28 @@
 @hostname = localhost
-@port = 9999
+@port = 8080
+# @port = 9999
 @host = http://{{hostname}}:{{port}}
 
 POST {{host}}/pessoas
 Content-Type: application/json
 
 {
-  "apelido" : "ana2",
-  "nome" : "awdawd",
-  "nascimento" : "2000-10-01",
-  "stack" : null
+  "apelido" : "vqwCSkgJBBdyawdHXawds",
+  "nome" : "Minnie Roberstson",
+  "nascimento" : "1990-12-06",
+  "stack" : [
+    "Java",
+    "Scala"
+  ]
 }
 
 ###
 
-GET {{host}}/pessoas/85ae9353-43a2-485e-bf07-c315aca49e5
+GET {{host}}/pessoas/bd4f7e83-b703-47d7-8131-bdf7a698dca9
 
 ###
 
-GET {{host}}/pessoas?t=null
+GET {{host}}/pessoas?t=java
 
 ###
 

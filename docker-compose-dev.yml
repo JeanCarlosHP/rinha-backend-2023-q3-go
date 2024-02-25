@@ -1,0 +1,43 @@
+version: '3.5'
+services:
+  postgres: # Banco de dados
+    image: docker.io/postgres
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rinha
+    command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
+    volumes:
+      - ./data/postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
+      - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+    network_mode: host
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: '2GB'
+
+  cache:
+    image: redis:latest
+    hostname: cache
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    volumes:
+      - ./data/redis.conf:/etc/redis/redis.conf
+    network_mode: host
+    deploy:
+      resources:
+        limits:
+          cpus: "0.15"
+          memory: "0.5GB"
